@@ -35,7 +35,7 @@ channels we get "main image".
 <img src="https://res.cloudinary.com/practicaldev/image/fetch/s--7uHGwEG8--/c_limit%2Cf_auto%2Cfl_progressive%2Cq_auto%2Cw_880/https://i.ibb.co/HgnybWG/rgb.png" height = "200" width = "800"/>
 </p>
 
-### LAB
+### L*A*B
 In L*a*b color space the first channel L, encodes the Lightness of each pixel and when we visualize this channel it appears as a black and white image.
 The *a and *b channels encode how much green-red and yellow-blue each pixel is, respectively.
 
