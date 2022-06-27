@@ -47,7 +47,7 @@ The *a and *b channels encode how much green-red and yellow-blue each pixel is, 
 ## Approach
 
 The solution to colorization problem was proposed in
-[***Image-to-Image Translation with Conditional Adversarial Networks***](https://arxiv.org/abs/1611.07004) with Conditional Adversarial Networks paper
+[***Image-to-Image Translation with Conditional Adversarial Networks***](https://arxiv.org/abs/1611.07004) paper
 , proposed a general solution to many image-to-image tasks in deep learning which one of those was colorization.
 
 In this approach, we define two losses:L1 loss, 
