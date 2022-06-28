@@ -300,7 +300,9 @@ class Discriminator(nn.Module):
 ### 5. Utility Functions
 
 #####  5.1 ShowSamples
-
+This function is takes in Validation data, put the 'L' channel in the generator to generate \*a
+and \*b channel and then recombine then to generate fake_image and finally plot the grayscale image i.e the input,
+fake_image and real_image.
 ```python
 def ShowSamples(generator, val_data, folder, epoch= -1, SAVE = True):
     data = next(iter(val_data))
@@ -340,7 +342,7 @@ def ShowSamples(generator, val_data, folder, epoch= -1, SAVE = True):
 ```
 
 ##### 5.2 VisulizeLoss
-
+This function is used to plot Generator_loss or Discriminator_loss.
 ```python
 def VisualizeLoss(Arr, folder, epoch, gen, dis, SAVE = True):
     ob=[]
@@ -360,7 +362,7 @@ def VisualizeLoss(Arr, folder, epoch, gen, dis, SAVE = True):
     plt.show()
 ```
 ##### 5.3 lab_to_rgb
-
+This function take is L*A*B color as input and provide its corresponding RGB output.
 ```python
 def lab_to_rgb(L, ab):
     """
@@ -415,6 +417,7 @@ drive.mount('/content/drive')
 ```
 
 ### 6. Putting our Model Together
+
 
 ```python
 inputFolder = "/content/drive/MyDrive/ColabNotebooks/model"
