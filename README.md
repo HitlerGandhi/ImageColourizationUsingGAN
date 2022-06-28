@@ -60,10 +60,6 @@ The discriminator, takes these two produced channels and concatenates them with 
 
 ## Implementation
 
-### 1. Loading Images
-
-We have used a total of 10000 images from COCO dataset out of which 8000 images were used for training the model and 2000 images were usedfor validation and testing of model.
-
 ```python
 # Importing Libraries
 import os
@@ -76,6 +72,19 @@ from tqdm.notebook import tqdm
 import matplotlib.pyplot as plt
 from skimage.color import rgb2lab, lab2rgb
 ```
+```
+import torch
+from torch import nn, optim
+from torchvision import transforms
+from torchvision.utils import make_grid
+from torch.utils.data import Dataset, DataLoader
+from torchvision.utils import save_image
+
+```
+
+### 1. Loading Images
+
+We have used a total of 10000 images from COCO dataset out of which 8000 images were used for training the model and 2000 images were usedfor validation and testing of model.
 
 ```python
 !pip install -U fastai
@@ -95,6 +104,7 @@ train_paths = paths_subset[train_idxs]
 val_paths = paths_subset[val_idxs]
 print(len(train_paths), len(val_paths))
 ```
+
 ```python
 # Shows Images
 _, axes = plt.subplots(4, 4, figsize=(10, 10))
@@ -102,11 +112,431 @@ for ax, img_path in zip(axes.flatten(), train_paths):
     ax.imshow(Image.open(img_path))
     ax.axis("off")
 ```
+
 ![image](https://user-images.githubusercontent.com/59966711/176251367-2016846c-521e-4002-8b44-e28e3b87f914.png)
 
 ### 2. Making Training and Validation datasets and dataloaders
 
 ```python
+SIZE = 256
+class DataPrep(Dataset):
+    def __init__(self, paths, split='train'):
+        if split == 'train':
+            self.transforms = transforms.Compose([
+                transforms.Resize((SIZE, SIZE),  Image.BICUBIC),
+                transforms.RandomHorizontalFlip(), # A little data augmentation!
+            ])
+        elif split == 'val':
+            self.transforms = transforms.Resize((SIZE, SIZE),  Image.BICUBIC)
+        
+        self.split = split
+        self.size = SIZE
+        self.paths = paths
+    
+    def __getitem__(self, idx):
+        img = Image.open(self.paths[idx]).convert("RGB")
+        img = self.transforms(img)
+        img = np.array(img)
+        img_lab = rgb2lab(img).astype("float32") # Converting RGB to L*a*b
+        img_lab = transforms.ToTensor()(img_lab)
+        L = img_lab[[0], ...] / 50. - 1. # Between -1 and 1
+        ab = img_lab[[1, 2], ...] / 110. # Between -1 and 1
+        
+        return {'L': L, 'ab': ab}
+    
+    def __len__(self):
+        return len(self.paths)
 ```
 
+```python
+batch_size = 16
+shuffle = True
+workers = 2
+train_dataset = DataPrep(train_paths)
+val_dataset = DataPrep(val_paths)
+train_loader= DataLoader(train_dataset,batch_size = batch_size,shuffle = shuffle,num_workers=workers,split = 'train')
+val_loader= DataLoader(val_dataset,batch_size = batch_size,shuffle = shuffle,num_workers=workers,split = 'test')
 
+```
+
+```python
+data = next(iter(train_dl))
+Ls, abs_ = data['L'], data['ab']
+print(Ls.shape, abs_.shape)
+print(len(train_dl), len(val_dl))
+
+```
+
+### 3. Generator Model
+
+```python
+class GeneratorBlock(nn.Module):
+  def __init__(self,in_channels,out_channels,batchnorm = False,up = False,use_dropout = False):
+    super(GeneratorBlock,self).__init__()
+    self.block1 = nn.Sequential(
+        nn.Conv2d(in_channels,out_channels,4,2,1,bias=False)
+        if up == False else nn.ConvTranspose2d(in_channels,out_channels,4,2,1,bias = False),
+    )
+    self.batchnorm = batchnorm
+    if batchnorm:
+      self.block2 = nn.BatchNorm2d(out_channels)
+
+    if up == True:
+      self.block3= nn.ReLU()
+    else:
+      self.block3 = nn.LeakyReLU(0.2)
+
+    self.use_dropout = use_dropout
+    if use_dropout:
+      self.block4 = nn.Dropout(0.5)
+
+
+  def forward(self,x):
+    x = self.block1(x)
+    if self.batchnorm:
+      x = self.block2(x)
+    x = self.block3(x)
+    if self.use_dropout:
+      return self.block4(x)
+    else:
+      return x
+
+```
+
+```python
+class Generator(nn.Module):
+  def __init__(self,in_channels = 1):
+    super(Generator,self).__init__()
+    self.d1 = GeneratorBlock(1,64,False,False,False)
+    self.d2 = GeneratorBlock(64,128,True,False,False)
+    self.d3 = GeneratorBlock(128,256,True,False,False)
+    self.d4 = GeneratorBlock(256,512,True,False,False)
+    self.d5 = GeneratorBlock(512,512,True,False,False)
+    self.d6 = GeneratorBlock(512,512,True,False,False)
+    self.d7 = GeneratorBlock(512,512,True,False,False)
+    self.bottom = nn.Sequential(
+        nn.Conv2d(512,512,4,2,1),
+        nn.LeakyReLU(0.2),
+    )
+    
+    self.u1 = GeneratorBlock(512,512,True,True,True)
+    self.u2 = GeneratorBlock(1024,512,True,True,True)
+    self.u3 = GeneratorBlock(1024,512,True,True,True)
+    self.u4 = GeneratorBlock(1024,512,True,True,False)
+    self.u5 = GeneratorBlock(1024,256,True,True,False)
+    self.u6 = GeneratorBlock(512,128,True,True,False)
+    self.u7 = GeneratorBlock(256,64,True,True,False)
+    self.up = nn.Sequential(
+        nn.ConvTranspose2d(128,2,4,2,1),
+        nn.Tanh(),
+    )
+
+  def forward(self,x):
+    down1 = self.d1(x)
+    down2 = self.d2(down1)
+    down3 = self.d3(down2)
+    down4 = self.d4(down3)
+    down5 = self.d5(down4)
+    down6 = self.d6(down5)
+    down7 = self.d7(down6)
+    down8 = self.bottom(down7)
+    up1 = self.u1(down8)
+    up2 = self.u2(torch.concat([up1,down7],1))
+    up3 = self.u3(torch.concat([up2,down6],1))
+    up4 = self.u4(torch.concat([up3,down5],1))
+    up5 = self.u5(torch.concat([up4,down4],1))
+    up6 = self.u6(torch.concat([up5,down3],1))
+    up7 = self.u7(torch.concat([up6,down2],1))
+    up8 = self.up(torch.concat([up7,down1],1))
+
+    return up8
+
+```
+```python
+    # To visulalize Generator
+    generator = Generator()
+    generator
+```
+
+### 4. Discriminator Model
+
+```python
+class DiscriminatorBlock(nn.Module):
+  def __init__(self,in_channels,out_channels,stride):
+    super(DiscriminatorBlock,self).__init__()
+    self.conv = nn.Sequential(
+        nn.Conv2d(in_channels,out_channels,4,stride,bias = False,padding=1),
+        nn.BatchNorm2d(out_channels),
+        nn.LeakyReLU(0.2)
+    )
+
+  def forward(self,x):
+    return self.conv(x);
+
+```
+```python
+class Discriminator(nn.Module):
+  def __init__(self,in_channels = 3):
+    super(Discriminator,self).__init__()
+    self.block1 = nn.Sequential(nn.Conv2d(3,64,4,2,1),nn.LeakyReLU(0.2))
+    self.block2 = DiscriminatorBlock(64,128,2)
+    self.block3 = DiscriminatorBlock(128,256,2)
+    self.block4 = DiscriminatorBlock(256,512,1)
+    self.block5 = nn.Conv2d(512,1,4,1,1)
+
+  def forward(self,y):
+    x = self.block1(y)
+    x = self.block2(x)
+    x = self.block3(x)
+    x = self.block4(x)
+    return self.block5(x)
+    
+```
+```python
+    # To visulalize Discriminator
+    discriminator = Discriminator(3)
+    discriminator
+```
+### 5. Utility Functions
+
+#####  5.1 ShowSamples
+
+```python
+def ShowSamples(generator, val_data, folder, epoch= -1, SAVE = True):
+    data = next(iter(val_data))
+    L = data['L']
+    ab = data['ab']
+    L=L.to(device)
+    ab=ab.to(device)
+    # print(ab.shape)
+    generator.eval()
+    with torch.no_grad():
+        fake_ab = generator(L)
+    generator.train()
+    real_images = lab_to_rgb(L, ab)
+    fake_images = lab_to_rgb(L, fake_ab.detach())
+
+    fig = plt.figure(figsize=(15, 8))
+    val = 1
+    for i in range(3):
+      for j in range(5):
+        ax = plt.subplot(3,5,val)
+        if i==0 :
+          if j==0:
+            ax.set_ylabel('Grayscale', size='large')
+          ax.imshow(L[j][0].cpu(),cmap = 'gray')
+        if i==1:
+          if j==0:
+            ax.set_ylabel('Fake_images', size='large')
+          ax.imshow(fake_images[j])
+        if i==2:
+          if j==0:
+            ax.set_ylabel('Real_images', size='large')
+          ax.imshow(real_images[j])
+        val+=1
+    plt.show()
+    if SAVE:
+        fig.savefig(folder + f"/Results_After_Epoch_{epoch}.png")
+```
+
+##### 5.2 VisulizeLoss
+
+```python
+def VisualizeLoss(Arr, folder, epoch, gen, dis, SAVE = True):
+    ob=[]
+    for i in Arr:
+      ob.append(i.cpu().detach().numpy())
+    x=(range(0,len(Arr)))
+    plt.figure(figsize = (12,10))
+    plt.plot(x,ob)
+    if dis:
+      str = "Discriminator"
+    if gen:
+      str = "Generator"
+    plt.xlabel("Number of Iterations")
+    plt.ylabel(str + " Loss")
+    if SAVE:
+        plt.savefig(folder + f"/{str}_Loss_After_Epoch_{epoch}.png")
+    plt.show()
+```
+##### 5.3 lab_to_rgb
+
+```python
+def lab_to_rgb(L, ab):
+    """
+    Takes a batch of images
+    """
+    L = (L + 1.) * 50.
+    ab = ab * 110.
+    Lab = torch.cat([L, ab], dim=1).permute(0, 2, 3, 1).cpu().detach().numpy()
+    rgb_imgs = []
+    for img in Lab:
+        img_rgb = lab2rgb(img)
+        rgb_imgs.append(img_rgb)
+    return np.stack(rgb_imgs, axis=0)
+```
+
+##### 5.4 SaveCheckpoint and LoadCheckpoint
+
+```python
+def SaveCheckpoint(model, optimizer, epoch, filename):
+    print("=> Saving checkpoint")
+    checkpoint = {
+        "state_dict": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "epoch":epoch,
+        "DISC_LOSS" : Discriminator_loss,
+        "GEN_LOSS" : Generator_loss
+    }
+    torch.save(checkpoint, filename)
+```
+```python
+def load_checkpoint(checkpoint_file, model, optimizer, lr):
+    print("=> Loading checkpoint")
+    checkpoint = torch.load(checkpoint_file, map_location=device)
+    model.load_state_dict(checkpoint["state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer"])
+    global epoch
+    global Discriminator_loss
+    global Generator_loss
+    epoch = checkpoint["epoch"]
+    Discriminator_loss = checkpoint["DISC_LOSS"].copy()
+    Generator_loss = checkpoint["GEN_LOSS"].copy()
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+```
+##### 5.5* Mounting Google Drive for saving checkpoints and images in Collab
+Put the following piece of code at start to mount GDrive on your **Collab Notebooks**.
+
+```python
+from google.colab import drive
+drive.mount('/content/drive')
+```
+
+### 6. Putting our Model Together
+
+```python
+inputFolder = "/content/drive/MyDrive/ColabNotebooks/model"
+outputFolder = "/content/drive/MyDrive/ColabNotebooks/Results"
+checkpointPathDiscriminator = inputFolder+"/disc.pth.tar"
+checkpointPathGenerator = inputFolder+"/gen.pth.tar"
+```
+```python
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")   
+device
+```
+![image](https://user-images.githubusercontent.com/59966711/176272852-b93885c4-4a57-46b6-9d54-5a025862d5d8.png)
+
+```python
+lr_G=2e-4
+lr_D=2e-4
+beta1=0.5
+beta2=0.999
+lambda_L1=100.0
+epoch = 1
+epochs = 250
+```
+```python
+shuffle=True
+saveimages= True
+pin_memory = True
+loadModel= True
+SaveModel = True
+```
+```python
+Discriminator_loss=[]
+Generator_loss=[]
+G_agg=0
+D_agg=0
+```
+```python
+G = Generator().to(device)
+D = Discriminator().to(device)
+```
+```python
+G_optimizer = torch.optim.Adam(G.parameters(), lr_G,betas=(beta1,beta2))
+D_optimizer = torch.optim.Adam(D.parameters(), lr_D,betas=(beta1,beta2))
+
+criterion_gan = nn.BCEWithLogitsLoss()
+criterion_pixelwise = nn.L1Loss()
+
+```
+```python
+if loadModel:
+    load_checkpoint(checkpointPathGenerator, G, G_optimizer, lr_G)
+    load_checkpoint(checkpointPathDiscriminator, D, D_optimizer, lr_D)
+```
+```python
+epoch+=1;
+while epoch <= epochs:
+  for i,data in enumerate(train_loader):
+    L = data['L'].to(device)
+    ab = data['ab'].to(device)
+
+    # TRAIN DISCRIMINATOR
+    D_optimizer.zero_grad()
+
+    fake_colour = G(L)
+
+    fake_img = torch.cat([L,fake_colour],1).detach()
+    real_img = torch.cat([L,ab],1)
+    
+    D_fake= D(fake_img)  #changes_applied
+    D_real= D(real_img) #changes applied
+    D_fake_loss = criterion_gan(D_fake,torch.zeros_like(D_fake))
+    D_real_loss = criterion_gan(D_real,torch.ones_like(D_fake))
+
+    total_loss = (D_real_loss+D_fake_loss)*0.5;
+
+    #total_loss.requires_grad = True
+
+    D_agg = total_loss
+  
+    #d_scaler.scale(total_loss).backward()
+    total_loss.backward()
+
+    D_optimizer.step()
+
+    # TRAIN GENERATOR
+
+    G_optimizer.zero_grad()
+
+    fake_colour = G(L)
+    fake_ = torch.cat([L,fake_colour],1)
+    fake_patch=D(fake_)
+   
+    G_fake_loss = criterion_gan(fake_patch,torch.ones_like(fake_patch)) # changes applied
+
+    L1_loss = criterion_pixelwise(fake_,torch.concat([L,ab],1))  # changes applied
+
+    G_loss = G_fake_loss + lambda_L1 * L1_loss
+
+    G_agg=G_loss
+
+    G_loss.backward()
+
+    G_optimizer.step()
+
+    Discriminator_loss.append(D_agg)
+    Generator_loss.append(G_agg)
+
+  if(epoch % 5 == 0):
+    ShowSamples(G, val_loader,outputFolder,epoch,saveimages)
+  if SaveModel:
+        SaveCheckpoint(G, G_optimizer, epoch, filename=checkpointPathGenerator)
+        SaveCheckpoint(D, D_optimizer, epoch, filename=checkpointPathDiscriminator)
+  if epoch % 5 == 0:
+        print("Generator Loss\n")
+        VisualizeLoss(Generator_loss,outputFolder,epoch,True,False,saveimages)
+        print("Discriminator Loss\n")
+        VisualizeLoss(Discriminator_loss,outputFolder,epoch,False,True,saveimages)
+  print("Epochs done: ",epoch)
+  epoch+=1
+```
+```python
+VisualizeLoss(Generator_loss,outputFolder,epoch,False,False)
+```
+```python
+VisualizeLoss(Discriminator_loss,outputFolder,epoch,False,False)
+```
