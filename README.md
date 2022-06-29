@@ -192,8 +192,7 @@ C64-C128-C256-C512-C512-C512-C512-C512
 Decoder:
 CD512-CD512-CD512-C512-C256-C128-C64
 
-
-![unet](https://user-images.githubusercontent.com/59966711/176546231-e5ff0942-9871-42c5-a7b6-a3c7646e7f65.png )
+<img src="Images/unet.png" alt="unet" width="600" img align="middle"/>
 
 ```python
 class GeneratorBlock(nn.Module):
@@ -644,9 +643,13 @@ while epoch <= epochs:
 
 ```python
 VisualizeLoss(Generator_loss,outputFolder,epoch,False,False)
+```
+<img src="Images/Generator_Loss_After_Epoch_225.png" alt="Discriminator Loss" width="600" img align="middle"/>
 
+```python
 VisualizeLoss(Discriminator_loss,outputFolder,epoch,False,False)
 ```
+<img src="Images/Discriminator_Loss_After_Epoch_225.png" alt="Discriminator Loss" width="600" img align="middle"/>
 
 ```python
 numRuns = 5
