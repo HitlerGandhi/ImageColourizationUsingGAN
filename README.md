@@ -11,12 +11,18 @@ and white image as input and producing a colourized image as output.
 
 ## Final Model Output
 
+![Screenshot 2022-06-30 021611](https://user-images.githubusercontent.com/59966711/176544172-00656b76-d455-4340-82a2-3028fc4a7c0a.jpg)
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![Screenshot 2022-06-30 021812](https://user-images.githubusercontent.com/59966711/176544259-24022404-a7ae-4c9f-85b3-e33c660b9f30.jpg)
+
+![Screenshot 2022-06-30 022125](https://user-images.githubusercontent.com/59966711/176544274-ee35e88f-297d-463d-bf97-72c6bf9a79ed.png)
+
+![Screenshot 2022-06-30 022206](https://user-images.githubusercontent.com/59966711/176544352-eb0d837b-64d6-4edf-91a5-ecdfd77c0a63.png)
+
+![Screenshot 2022-06-30 022601](https://user-images.githubusercontent.com/59966711/176544357-2039e31f-4080-46bb-a19d-af9a0a8392fb.png)
 
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
-
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1E0h9_KfBlsdtl_E1rlb0dKpzIsGvYRSA?authuser=3#scrollTo=t4QEsbHFODjK)
 
 ## Introduction to colorization problem
 
