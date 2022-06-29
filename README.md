@@ -40,7 +40,6 @@ The *a and *b channels encode how much green-red and yellow-blue each pixel is, 
 
 ![lab](https://user-images.githubusercontent.com/59966711/176247114-a0e680de-d9b2-44c5-87a1-84a3d2610dbd.jpg)
 
-
 ## Approach
 
 The solution to colorization problem was proposed in
@@ -166,8 +165,20 @@ print(Ls.shape, abs_.shape)
 print(len(train_dl), len(val_dl))
 
 ```
+### => For Generator and Discriminator model following convention is used 
+Ck denote a Convolution-BatchNorm-ReLU layer with k filters.
+CDk denotes a Convolution-BatchNorm-Dropout-ReLU layer with a dropout rate of 50%. 
+All convolutions are 4× 4 spatial filters applied with stride 2.
+Convolutions in the encoder, and in the discriminator, downsample
+by a factor of 2, whereas in the decoder they upsample by a factor of 2.
 
-### 3. Generator Model
+### 3. Generator Model 
+### Generator architectures:
+The encoder-decoder architecture consists of:
+Encoder:
+C64-C128-C256-C512-C512-C512-C512-C512
+Decoder:
+CD512-CD512-CD512-C512-C256-C128-C64
 
 ```python
 class GeneratorBlock(nn.Module):
@@ -260,6 +271,24 @@ class Generator(nn.Module):
 
 ### 4. Discriminator Model
 
+###### Discriminator architecture
+
+The 70 × 70 discriminator architecture is:
+C64-C128-C256-C512
+After the last layer, a convolution is applied to map to
+a 1-dimensional output, followed by a Sigmoid function.
+As an exception to the above notation, BatchNorm is not
+applied to the first C64 layer. All ReLUs are leaky, with
+slope 0.2.
+All other discriminators follow the same basic architecture, with depth varied to modify the receptive field size:
+1 × 1 discriminator:
+C64-C128 (note, in this special case, all convolutions are
+1 × 1 spatial filters)
+16 × 16 discriminator:
+C64-C128
+286 × 286 discriminator:
+C64-C128-C256-C512-C512-C512
+
 ```python
 class DiscriminatorBlock(nn.Module):
   def __init__(self,in_channels,out_channels,stride):
@@ -274,6 +303,7 @@ class DiscriminatorBlock(nn.Module):
     return self.conv(x);
 
 ```
+
 ```python
 class Discriminator(nn.Module):
   def __init__(self,in_channels = 3):
