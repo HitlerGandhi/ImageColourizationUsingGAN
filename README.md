@@ -556,7 +556,7 @@ Now we will train our generator using following steps:
 
 3. We use **L1_loss** and compute the distance between the predicted two channels **(fake_)** and the target two channels**(torch.concat([L,ab],1))** and multiply this loss by a coefficient **lambda_L1=100.0** to balance the two losses and then add this loss to the adversarial loss.
 
-G_loss = G_fake_loss + lambda_L1 * L1_loss
+=>   G_loss = G_fake_loss + lambda_L1 * L1_loss
 
 4. Now we call backward on this loss **(G_loss)** and **D_optimizer.step()** that makes the optimizer iterate over all parameters it is supposed to update and use their internally stored grad to update their values.
 
@@ -630,9 +630,20 @@ while epoch <= epochs:
   print("Epochs done: ",epoch)
   epoch+=1
 ```
+#### 6.6 Visualization of generator loss, discriminator loss and Sample images using both training and test data
+
 ```python
 VisualizeLoss(Generator_loss,outputFolder,epoch,False,False)
-```
-```python
+
 VisualizeLoss(Discriminator_loss,outputFolder,epoch,False,False)
+```
+
+```python
+numRuns = 5
+
+for run in range(numRuns):
+    ShowSamples(G, train_loader,outputFolder,epoch,False)
+    
+for run in range(numRuns):
+    ShowSamples(G, val_loader,outputFolder,epoch,False)
 ```
