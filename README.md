@@ -418,6 +418,7 @@ drive.mount('/content/drive')
 
 ### 6. Putting our Model Together
 
+##### 6.1 Declaring path for input and output folders and checkpoints for generator and discriminator
 
 ```python
 inputFolder = "/content/drive/MyDrive/ColabNotebooks/model"
@@ -425,12 +426,16 @@ outputFolder = "/content/drive/MyDrive/ColabNotebooks/Results"
 checkpointPathDiscriminator = inputFolder+"/disc.pth.tar"
 checkpointPathGenerator = inputFolder+"/gen.pth.tar"
 ```
+
+##### 6.2 Calling CUDA
 ```python
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")   
 device
 ```
 ![image](https://user-images.githubusercontent.com/59966711/176272852-b93885c4-4a57-46b6-9d54-5a025862d5d8.png)
 
+
+##### 
 ```python
 lr_G=2e-4
 lr_D=2e-4
