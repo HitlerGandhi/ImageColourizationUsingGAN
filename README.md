@@ -165,18 +165,24 @@ print(Ls.shape, abs_.shape)
 print(len(train_dl), len(val_dl))
 
 ```
-### => For Generator and Discriminator model following convention is used 
+### => For Generator and Discriminator model following convention is used:
+
 Ck denote a Convolution-BatchNorm-ReLU layer with k filters.
-CDk denotes a Convolution-BatchNorm-Dropout-ReLU layer with a dropout rate of 50%. 
+
+CDk denotes a Convolution-BatchNorm-Dropout-ReLU layer with a dropout rate of 50%.
+
 All convolutions are 4× 4 spatial filters applied with stride 2.
-Convolutions in the encoder, and in the discriminator, downsample
-by a factor of 2, whereas in the decoder they upsample by a factor of 2.
+
+Convolutions in the encoder, and in the discriminator, downsampleby a factor of 2, whereas in the decoder they upsample by a factor of 2.
 
 ### 3. Generator Model 
 ### Generator architectures:
+
 The encoder-decoder architecture consists of:
+
 Encoder:
 C64-C128-C256-C512-C512-C512-C512-C512
+
 Decoder:
 CD512-CD512-CD512-C512-C256-C128-C64
 
@@ -271,22 +277,30 @@ class Generator(nn.Module):
 
 ### 4. Discriminator Model
 
-###### Discriminator architecture
+#### Discriminator architecture
 
 The 70 × 70 discriminator architecture is:
+
 C64-C128-C256-C512
+
 After the last layer, a convolution is applied to map to
 a 1-dimensional output, followed by a Sigmoid function.
 As an exception to the above notation, BatchNorm is not
 applied to the first C64 layer. All ReLUs are leaky, with
 slope 0.2.
-All other discriminators follow the same basic architecture, with depth varied to modify the receptive field size:
+
+All other discriminators follow the same basic architecture, with depth varied to modify the receptive field size:
+
 1 × 1 discriminator:
-C64-C128 (note, in this special case, all convolutions are
-1 × 1 spatial filters)
+
+C64-C128 (note, in this special case, all convolutions are 1 × 1 spatial filters)
+
 16 × 16 discriminator:
+
 C64-C128
+
 286 × 286 discriminator:
+
 C64-C128-C256-C512-C512-C512
 
 ```python
@@ -329,10 +343,12 @@ class Discriminator(nn.Module):
 ```
 ### 5. Utility Functions
 
-#####  5.1 ShowSamples
+####  5.1 ShowSamples
+
 This function is takes in Validation data, put the 'L' channel in the generator to generate \*a
 and \*b channel and then recombine then to generate fake_image and finally plot the grayscale image i.e the input,
 fake_image and real_image.
+
 ```python
 def ShowSamples(generator, val_data, folder, epoch= -1, SAVE = True):
     data = next(iter(val_data))
@@ -371,8 +387,10 @@ def ShowSamples(generator, val_data, folder, epoch= -1, SAVE = True):
         fig.savefig(folder + f"/Results_After_Epoch_{epoch}.png")
 ```
 
-##### 5.2 VisulizeLoss
+#### 5.2 VisulizeLoss
+
 This function is used to plot Generator_loss or Discriminator_loss.
+
 ```python
 def VisualizeLoss(Arr, folder, epoch, gen, dis, SAVE = True):
     ob=[]
@@ -391,8 +409,9 @@ def VisualizeLoss(Arr, folder, epoch, gen, dis, SAVE = True):
         plt.savefig(folder + f"/{str}_Loss_After_Epoch_{epoch}.png")
     plt.show()
 ```
-##### 5.3 lab_to_rgb
+#### 5.3 lab_to_rgb
 This function take is L*A*B color as input and provide its corresponding RGB output.
+
 ```python
 def lab_to_rgb(L, ab):
     """
@@ -408,7 +427,7 @@ def lab_to_rgb(L, ab):
     return np.stack(rgb_imgs, axis=0)
 ```
 
-##### 5.4 SaveCheckpoint and LoadCheckpoint
+#### 5.4 SaveCheckpoint and LoadCheckpoint
 
 ```python
 def SaveCheckpoint(model, optimizer, epoch, filename):
@@ -438,7 +457,7 @@ def load_checkpoint(checkpoint_file, model, optimizer, lr):
     for param_group in optimizer.param_groups:
         param_group["lr"] = lr
 ```
-##### 5.5* Mounting Google Drive for saving checkpoints and images in Collab
+#### 5.5* Mounting Google Drive for saving checkpoints and images in Collab
 Put the following piece of code at start to mount GDrive on your **Collab Notebooks**.
 
 ```python
@@ -448,7 +467,7 @@ drive.mount('/content/drive')
 
 ### 6. Putting our Model Together
 
-##### 6.1 Declaring path for input and output folders and checkpoints for generator and discriminator
+#### 6.1 Declaring path for input and output folders and checkpoints for generator and discriminator
 
 ```python
 inputFolder = "/content/drive/MyDrive/ColabNotebooks/model"
@@ -457,7 +476,7 @@ checkpointPathDiscriminator = inputFolder+"/disc.pth.tar"
 checkpointPathGenerator = inputFolder+"/gen.pth.tar"
 ```
 
-##### 6.2 Calling CUDA
+#### 6.2 Calling CUDA
 ```python
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")   
 device
@@ -465,7 +484,7 @@ device
 ![image](https://user-images.githubusercontent.com/59966711/176272852-b93885c4-4a57-46b6-9d54-5a025862d5d8.png)
 
 
-##### 6.3 Hyperparameters
+#### 6.3 Hyperparameters
 ```python
 lr_G=2e-4              # Learning rate of generators
 lr_D=2e-4              # Learning rate of discriminstors
@@ -490,7 +509,7 @@ Generator_loss=[]
 G_agg=0
 D_agg=0
 ```
-##### 6.4 Loading generator and discriminator models on the device
+#### 6.4 Loading generator and discriminator models on the device
 
 ```python
 G = Generator().to(device)
@@ -506,14 +525,44 @@ criterion_pixelwise = nn.L1Loss()
 
 ```
 
-##### 6.5 Loading Model if present
+#### 6.5 Loading Model if present
 ```python
 if loadModel:
     load_checkpoint(checkpointPathGenerator, G, G_optimizer, lr_G)
     load_checkpoint(checkpointPathDiscriminator, D, D_optimizer, lr_D)
 ```
 
-###### 6.6 Main training function
+#### 6.6 Main training function
+
+This is the part of the code where we will be training our model. 
+
+First we will be training our discriminator using following steps:
+
+1. Set the gradients of the optimizer **(D_optimizer)** of discriminator to zero.
+
+2. We then produce fake colors by passing 'L' channel as an input to generator and then concat it with 'L'channel to generate **fake_img**.
+
+Note: Make sure to detach **fake_img** from the generator's graph so that they act as a constant to the discriminator, like normal images.
+
+3. Then we feed these generated **fake_img** to the discriminator and label them as **D_fake** and real **real_img** to the discriminator and label them as **D_real**.
+
+4. We add up the two losses **(D_fake_loss, D_real_loss)** for fake and real and take the average and then call the backward on the **total_loss**.
+
+Now we will train our generator using following steps:
+
+1. Set the gradients of the optimizer **(G_optimizer)** of generator to zero.
+
+2. We feed the discriminator the fake image and try to fool it by assigning real labels to them and calculating the adversarial loss **( G_fake_loss)**.
+
+3. We use **L1_loss** and compute the distance between the predicted two channels **(fake_)** and the target two channels**(torch.concat([L,ab],1))** and multiply this loss by a coefficient **lambda_L1=100.0** to balance the two losses and then add this loss to the adversarial loss.
+
+G_loss = G_fake_loss + lambda_L1 * L1_loss
+
+4. Now we call backward on this loss **(G_loss)** and **D_optimizer.step()** that makes the optimizer iterate over all parameters it is supposed to update and use their internally stored grad to update their values.
+
+Finally, we store the **D_agg** in **Discriminator_loss** and **G_agg** in **Generator_loss** and in the next few lines we generate plots for discriminator loss,
+generator loss and save some sample images generated at the current sate of the model for future reference.
+
 ```python
 epoch+=1;
 while epoch <= epochs:
