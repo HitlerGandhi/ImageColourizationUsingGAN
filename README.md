@@ -192,6 +192,9 @@ C64-C128-C256-C512-C512-C512-C512-C512
 Decoder:
 CD512-CD512-CD512-C512-C256-C128-C64
 
+
+![unet](https://user-images.githubusercontent.com/59966711/176546231-e5ff0942-9871-42c5-a7b6-a3c7646e7f65.png )
+
 ```python
 class GeneratorBlock(nn.Module):
   def __init__(self,in_channels,out_channels,batchnorm = False,up = False,use_dropout = False):
@@ -227,6 +230,7 @@ class GeneratorBlock(nn.Module):
 ```
 
 ```python
+
 class Generator(nn.Module):
   def __init__(self,in_channels = 1):
     super(Generator,self).__init__()
