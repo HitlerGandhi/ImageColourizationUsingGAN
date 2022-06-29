@@ -435,16 +435,18 @@ device
 ![image](https://user-images.githubusercontent.com/59966711/176272852-b93885c4-4a57-46b6-9d54-5a025862d5d8.png)
 
 
-##### 
+##### 6.3 Hyperparameters
 ```python
-lr_G=2e-4
-lr_D=2e-4
-beta1=0.5
+lr_G=2e-4              # Learning rate of generators
+lr_D=2e-4              # Learning rate of discriminstors
+#betas are used for computing running averages of gradient and its square (default: (0.9, 0.999))
+beta1=0.5               
 beta2=0.999
-lambda_L1=100.0
-epoch = 1
-epochs = 250
+lambda_L1=100.0        #lambda parameter controls the amount of regularization applied to the model.
+epoch = 0
+epochs = 250           # Total number of times model runs
 ```
+
 ```python
 shuffle=True
 saveimages= True
@@ -458,23 +460,30 @@ Generator_loss=[]
 G_agg=0
 D_agg=0
 ```
+##### 6.4 Loading generator and discriminator models on the device
+
 ```python
 G = Generator().to(device)
 D = Discriminator().to(device)
 ```
+
+Optimizers 
 ```python
 G_optimizer = torch.optim.Adam(G.parameters(), lr_G,betas=(beta1,beta2))
 D_optimizer = torch.optim.Adam(D.parameters(), lr_D,betas=(beta1,beta2))
-
 criterion_gan = nn.BCEWithLogitsLoss()
 criterion_pixelwise = nn.L1Loss()
 
 ```
+
+##### 6.5 Loading Model if present
 ```python
 if loadModel:
     load_checkpoint(checkpointPathGenerator, G, G_optimizer, lr_G)
     load_checkpoint(checkpointPathDiscriminator, D, D_optimizer, lr_D)
 ```
+
+###### 6.6 Main training function
 ```python
 epoch+=1;
 while epoch <= epochs:
