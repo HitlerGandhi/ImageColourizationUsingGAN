@@ -642,21 +642,28 @@ while epoch <= epochs:
 #### 6.6 Visualization of generator loss, discriminator loss and Sample images using both training and test data
 
 ```python
+# Can be used for plotting loss of generator at any epoch
 VisualizeLoss(Generator_loss,outputFolder,epoch,False,False)
 ```
-<img src="Images/Generator_Loss_After_Epoch_225.png" alt="Discriminator Loss" width="600" img align="middle"/>
+
+https://user-images.githubusercontent.com/59966711/176663216-5416dc4c-6512-420e-b08b-04a30e4562b3.mp4
 
 ```python
+# Can be used for plotting loss of discriminator at any epoch
 VisualizeLoss(Discriminator_loss,outputFolder,epoch,False,False)
 ```
-<img src="Images/Discriminator_Loss_After_Epoch_225.png" alt="Discriminator Loss" width="600" img align="middle"/>
+https://user-images.githubusercontent.com/59966711/176663251-13548c9e-c912-460b-8105-7be071e99471.mp4
 
 ```python
-numRuns = 5
+num = 5
 
-for run in range(numRuns):
+for n in range(num):
     ShowSamples(G, train_loader,outputFolder,epoch,False)
     
-for run in range(numRuns):
+for n in range(num):
     ShowSamples(G, val_loader,outputFolder,epoch,False)
 ```
+
+https://user-images.githubusercontent.com/59966711/176663605-b85df483-0a47-4db8-93fa-5a60844db2e8.mp4
+
+
