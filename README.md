@@ -359,7 +359,7 @@ and \*b channel and then recombine then to generate fake_image and finally plot 
 fake_image and real_image.
 
 ```python
-def ShowSamples(generator, val_data, folder, epoch= -1, SAVE = True):
+def Show_Samples(generator, val_data, folder, epoch= -1, SAVE = True):
     data = next(iter(val_data))
     L = data['L']
     ab = data['ab']
@@ -401,7 +401,7 @@ def ShowSamples(generator, val_data, folder, epoch= -1, SAVE = True):
 This function is used to plot Generator_loss or Discriminator_loss.
 
 ```python
-def VisualizeLoss(Arr, folder, epoch, gen, dis, SAVE = True):
+def Visualize_Loss(Arr, folder, epoch, gen, dis, SAVE = True):
     ob=[]
     for i in Arr:
       ob.append(i.cpu().detach().numpy())
@@ -439,7 +439,7 @@ def lab_to_rgb(L, ab):
 #### 5.4 SaveCheckpoint and LoadCheckpoint
 
 ```python
-def SaveCheckpoint(model, optimizer, epoch, filename):
+def Save_Checkpoint(model, optimizer, epoch, filename):
     print("=> Saving checkpoint")
     checkpoint = {
         "State_Dictionary": model.state_dict(),
@@ -450,7 +450,7 @@ def SaveCheckpoint(model, optimizer, epoch, filename):
     }
     torch.save(checkpoint, filename)
 
-def load_checkpoint(checkpoint_file, model, optimizer, lr):
+def Load_Checkpoint(checkpoint_file, model, optimizer, lr):
     print("=> Loading checkpoint")
     global epoch
     global Discriminator_loss
@@ -480,8 +480,8 @@ drive.mount('/content/drive')
 ```python
 inputFolder = "/content/drive/MyDrive/ColabNotebooks/model"
 outputFolder = "/content/drive/MyDrive/ColabNotebooks/Results"
-checkpointPathDiscriminator = inputFolder+"/disc.pth.tar"
-checkpointPathGenerator = inputFolder+"/gen.pth.tar"
+Discriminator_checkpoint = inputFolder+"/discriminator.pth.tar"
+Generator_checkpoint = inputFolder+"/generator.pth.tar"
 ```
 
 #### 6.2 Calling CUDA
@@ -536,8 +536,8 @@ criterion_pixelwise = nn.L1Loss()
 #### 6.5 Loading Model if present
 ```python
 if loadModel:
-    load_checkpoint(checkpointPathGenerator, G, G_optimizer, lr_G)
-    load_checkpoint(checkpointPathDiscriminator, D, D_optimizer, lr_D)
+     Load_Checkpoint(Generator_checkpoint, G, G_optimizer, lr_G)
+     Load_Checkpoint(Discriminator_checkpoint, D, D_optimizer, lr_D)
 ```
 
 #### 6.6 Main training function
@@ -626,15 +626,15 @@ while epoch <= epochs:
     Generator_loss.append(G_agg)
 
   if(epoch % 5 == 0):
-    ShowSamples(G, val_loader,outputFolder,epoch,saveimages)
+    Show_Samples(G, val_loader,outputFolder,epoch,saveimages)
   if SaveModel:
-        SaveCheckpoint(G, G_optimizer, epoch, filename=checkpointPathGenerator)
-        SaveCheckpoint(D, D_optimizer, epoch, filename=checkpointPathDiscriminator)
+        Save_Checkpoint(G, G_optimizer, epoch, filename=Generator_checkpoint)
+        Save_Checkpoint(D, D_optimizer, epoch, filename=Discriminator_checkpoint)
   if epoch % 5 == 0:
         print("Generator Loss\n")
-        VisualizeLoss(Generator_loss,outputFolder,epoch,True,False,saveimages)
+        Visualize_Loss(Generator_loss,outputFolder,epoch,True,False,saveimages)
         print("Discriminator Loss\n")
-        VisualizeLoss(Discriminator_loss,outputFolder,epoch,False,True,saveimages)
+        Visualize_Loss(Discriminator_loss,outputFolder,epoch,False,True,False)
   print("Epochs done: ",epoch)
   epoch+=1
 ```
@@ -642,14 +642,14 @@ while epoch <= epochs:
 
 ```python
 # Can be used for plotting loss of generator at any epoch
-VisualizeLoss(Generator_loss,outputFolder,epoch,True,False,False)
+Visualize_Loss(Generator_loss,outputFolder,epoch,False,True,False)
 ```
 
 https://user-images.githubusercontent.com/59966711/176663216-5416dc4c-6512-420e-b08b-04a30e4562b3.mp4
 
 ```python
 # Can be used for plotting loss of discriminator at any epoch
-VisualizeLoss(Discriminator_loss,outputFolder,epoch,True,False,False)
+Visualize_Loss(Discriminator_loss,outputFolder,epoch,False,True,False)
 ```
 https://user-images.githubusercontent.com/59966711/176663251-13548c9e-c912-460b-8105-7be071e99471.mp4
 
@@ -657,10 +657,10 @@ https://user-images.githubusercontent.com/59966711/176663251-13548c9e-c912-460b-
 num = 5
 
 for n in range(num):
-    ShowSamples(G, train_loader,outputFolder,epoch,False)
+    Show_Samples(G, train_loader,outputFolder,epoch,False)
     
 for n in range(num):
-    ShowSamples(G, val_loader,outputFolder,epoch,False)
+     Show_Samples(G, val_loader,outputFolder,epoch,False)
 ```
 
 https://user-images.githubusercontent.com/59966711/176663605-b85df483-0a47-4db8-93fa-5a60844db2e8.mp4
