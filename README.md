@@ -373,7 +373,7 @@ def ShowSamples(generator, val_data, folder, epoch= -1, SAVE = True):
     real_images = lab_to_rgb(L, ab)
     fake_images = lab_to_rgb(L, fake_ab.detach())
 
-    fig = plt.figure(figsize=(15, 8))
+    fig = plt.figure(figsize=(20, 10))
     val = 1
     for i in range(3):
       for j in range(5):
@@ -393,7 +393,7 @@ def ShowSamples(generator, val_data, folder, epoch= -1, SAVE = True):
         val+=1
     plt.show()
     if SAVE:
-        fig.savefig(folder + f"/Results_After_Epoch_{epoch}.png")
+        fig.savefig(folder + f"/ResultsAfter{epoch}.png")
 ```
 
 #### 5.2 VisulizeLoss
@@ -415,7 +415,7 @@ def VisualizeLoss(Arr, folder, epoch, gen, dis, SAVE = True):
     plt.xlabel("Number of Iterations")
     plt.ylabel(str + " Loss")
     if SAVE:
-        plt.savefig(folder + f"/{str}_Loss_After_Epoch_{epoch}.png")
+        plt.savefig(folder + f"/{str}LossAfterEpoch{epoch}.png")
     plt.show()
 ```
 #### 5.3 lab_to_rgb
@@ -442,26 +442,25 @@ def lab_to_rgb(L, ab):
 def SaveCheckpoint(model, optimizer, epoch, filename):
     print("=> Saving checkpoint")
     checkpoint = {
-        "state_dict": model.state_dict(),
-        "optimizer": optimizer.state_dict(),
-        "epoch":epoch,
-        "DISC_LOSS" : Discriminator_loss,
-        "GEN_LOSS" : Generator_loss
+        "State_Dictionary": model.state_dict(),
+        "Optimizer_State": optimizer.state_dict(),
+        "Current_epoch":epoch,
+        "LossInDiscriminator" : Discriminator_loss,
+        "LossInGenerator" : Generator_loss
     }
     torch.save(checkpoint, filename)
-```
-```python
+
 def load_checkpoint(checkpoint_file, model, optimizer, lr):
     print("=> Loading checkpoint")
-    checkpoint = torch.load(checkpoint_file, map_location=device)
-    model.load_state_dict(checkpoint["state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer"])
     global epoch
     global Discriminator_loss
     global Generator_loss
-    epoch = checkpoint["epoch"]
-    Discriminator_loss = checkpoint["DISC_LOSS"].copy()
-    Generator_loss = checkpoint["GEN_LOSS"].copy()
+    checkpoint = torch.load(checkpoint_file, map_location=device)
+    model.load_state_dict(checkpoint["State_Dictionary"])
+    optimizer.load_state_dict(checkpoint["Optimizer_State"])
+    epoch = checkpoint["Current_epoch"]
+    Discriminator_loss = checkpoint["LossInDiscriminator"].copy()
+    Generator_loss = checkpoint["LossInGenerator"].copy()
 
     for param_group in optimizer.param_groups:
         param_group["lr"] = lr
@@ -643,14 +642,14 @@ while epoch <= epochs:
 
 ```python
 # Can be used for plotting loss of generator at any epoch
-VisualizeLoss(Generator_loss,outputFolder,epoch,False,False)
+VisualizeLoss(Generator_loss,outputFolder,epoch,True,False,False)
 ```
 
 https://user-images.githubusercontent.com/59966711/176663216-5416dc4c-6512-420e-b08b-04a30e4562b3.mp4
 
 ```python
 # Can be used for plotting loss of discriminator at any epoch
-VisualizeLoss(Discriminator_loss,outputFolder,epoch,False,False)
+VisualizeLoss(Discriminator_loss,outputFolder,epoch,True,False,False)
 ```
 https://user-images.githubusercontent.com/59966711/176663251-13548c9e-c912-460b-8105-7be071e99471.mp4
 
