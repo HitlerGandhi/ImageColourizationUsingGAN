@@ -77,7 +77,7 @@ from tqdm.notebook import tqdm
 import matplotlib.pyplot as plt
 from skimage.color import rgb2lab, lab2rgb
 ```
-```
+```python
 import torch
 from torch import nn, optim
 from torchvision import transforms
